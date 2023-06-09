@@ -3,7 +3,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_recommenders as tfrs
 import pandas as pd
-from flask import Flask, request
+from flask import Flask, request, jsonify
+import requests
 
 #Load model
 model = tf.keras.models.load_model('./content_model')
@@ -16,44 +17,63 @@ def hello_world():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    json_data = request.json
-    test_1 = pd.DataFrame.from_dict(json_data)
-    # return json.dumps(json_data)
-    ratings = tf.data.Dataset.from_tensor_slices(
-        dict(test_1[['id_user', 'id_event', 'nama_event', 'harga_tiket', 'durasi', 'genre', 'id_event_organizer']]))
+    # Get Data from user
+    data = request.json
+    id_user = data['id_user']
+    genre = data['genre']
 
+    # for Encode genre manually
+    music_genres = {
+        'pop': 4,
+        'jazz': 3,
+        'dangdut': 0,
+        'electronic': 1,
+        'r&b': 5,
+        'rock': 6,
+        'indie': 2
+    }
+
+    # Get data from database and do encoding
+    url = f'https://elise-project.mdwisu.shop/events/getEventForMl?genre={genre}'
+    response = requests.get(url)
+    data = response.json()
+    df = pd.DataFrame(data['data'])
+    df['id_user'] = id_user
+    df['genre'] = music_genres[genre.lower()]
+
+
+    # Convert dataframe to tensorflow dataset
+    ratings = tf.data.Dataset.from_tensor_slices(
+        dict(df[['id_user', 'id_event', 'nama_event', 'harga_tiket', 'durasi', 'genre', 'id_event_organizer']]))
+
+    # Mapping
     ratings = ratings.map(lambda x: {
         'durasi': float(x['durasi']),
         'genre': int(x['genre']),
         'harga_tiket': float(x['harga_tiket']),
-        'id_event': x['id_event'],
-        'id_event_organizer': x['id_event_organizer'],
-        'id_user': x['id_user'],
+        'id_event': str(x['id_event']),
+        'id_event_organizer': str(x['id_event_organizer']),
+        'id_user': str(x['id_user']),
         'nama_event': x['nama_event'],
-        #     'user_rating':float(x['user_rating'])
     })
-
     cached_test = ratings.batch(4096).cache()
 
+    # Predicting rating values
     prediction = model.predict(cached_test)
-    prediction_string = [str(d) for d in prediction]
 
-    id_user = test_1['id_user'].values
-    id_event = test_1['id_event'].values
+    # Add prediction to df
+    df['rating_prediction'] = pd.Series(prediction.flatten())
 
-    response_json = {
-        "id_user": list(id_user),
-        "id_event": list(id_event),
-        "prediction": list(prediction_string)
-    }
+    # Sort Descending by rating _prediction
+    df.sort_values(by='rating_prediction', ascending=False, inplace=True)
 
-    return json.dumps(response_json)
+    # Df to Json
+    # json_data = df.to_json(orient='records')
 
-# def api_response():
-#     from flask import jsonify
-#     if request.method == 'POST':
-#         return jsonify(**request.json)
+    return jsonify(df.to_dict(orient='records'))
+
+
 
 if __name__ == '__main__':
-    # app.debug = True
+    app.debug = True
     app.run(host='0.0.0.0', port=5000)
