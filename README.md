@@ -92,7 +92,7 @@ The following is a list of requirements needed to run the Flask application usin
     tensorflow-recommenders==0.7.3
     requests==2.28.2
     flask_cors==3.0.10
-    ```
+  ```
 
 You can install all the requirements above using pip by running the following command:
 
