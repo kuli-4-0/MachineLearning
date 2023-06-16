@@ -78,19 +78,21 @@ Please make sure you have installed the required dependencies, including Axios, 
 
 The following is a list of requirements needed to run the Flask application using the Deep & Cross Network (DCN) algorithm:
 
-Flask==2.3.2
-ipykernel==6.20.2
-keras==2.11.0
-numpy==1.24.1
-pandas==1.5.3
-scikit-learn==1.2.1
-tensorboard==2.11.2
-tensorboard-data-server==0.6.1
-tensorboard-plugin-wit==1.8.1
-tensorflow==2.11.0
-tensorflow-recommenders==0.7.3
-requests==2.28.2
-flask_cors==3.0.10
+ ```
+    Flask==2.3.2
+    ipykernel==6.20.2
+    keras==2.11.0
+    numpy==1.24.1
+    pandas==1.5.3
+    scikit-learn==1.2.1
+    tensorboard==2.11.2
+    tensorboard-data-server==0.6.1
+    tensorboard-plugin-wit==1.8.1
+    tensorflow==2.11.0
+    tensorflow-recommenders==0.7.3
+    requests==2.28.2
+    flask_cors==3.0.10
+    ```
 
 You can install all the requirements above using pip by running the following command:
 
